@@ -1,5 +1,6 @@
 #ifndef PLAYERS_H
 #define PLAYERS_H
+#include "replay.h"
 
 //Vor deklarieren um wiederholtes includen der header zu vermeiden.(players.h -> board.h -> players.h ->board.h etc)
 struct board;
@@ -18,8 +19,8 @@ struct AiMove{
 };
 
 
-int humanMove(player* currentPlayer,player *p1,player *p2,struct board *field1);
-int computerMove(player* currentPlayer, player* opponent, player* p1, player* p2, struct board* field1);
+int humanMove(player* currentPlayer,player *p1,player *p2,struct board *field1,Replay *r1);
+int computerMove(player* currentPlayer, player* opponent, player* p1, player* p2, struct board* field1,Replay *r1);
 struct AiMove computerLogic(struct board* field1,player *current,player *opponent);
 #endif
 

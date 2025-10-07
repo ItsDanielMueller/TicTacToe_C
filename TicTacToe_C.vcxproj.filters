@@ -35,5 +35,8 @@
     <ClInclude Include="replay.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="operatingSystem.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

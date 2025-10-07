@@ -1,7 +1,8 @@
-#include "board.h"
+ï»¿#include "board.h"
 #include "librarys.h"
 #include "players.h"
 #include "replay.h"
+#include "operatingSystem.h"
 
 
 void swap(int* a, int* b) {
@@ -12,7 +13,7 @@ void swap(int* a, int* b) {
 
 
 void shuffle(int* array, int n) {
-	//Fisher-Yates Shuffle. Tausch zufällige zahlen in einem vorhandenen Array.
+	//Fisher-Yates Shuffle. Tausch zufÃ¤llige zahlen in einem vorhandenen Array.
 	for (int i = n - 1; i > 0; i--) {
 		int j = rand() % (i + 1);
 		swap(&array[i], &array[j]);
@@ -28,12 +29,12 @@ int parseArguement(int argCount, char* args[],board * field1) {
 		return 1;
 	}
 
-	//Hier werden die args[] in Kleinbuchstaben verwandelt um Groß- Kleinschreibung zu ignorieren. 
+	//Hier werden die args[] in Kleinbuchstaben verwandelt um GroÃŸ- Kleinschreibung zu ignorieren. 
 	for (int i = 0; i < argCount; i++) {
 		char* p = args[i];
 		while (*p) {								//While *p sagt solange der Inhalt von p nicht \0 ist soll die while loop weiterlaufen.
 			*p = (char)tolower((unsigned char)*p);
-			p++;									//Da p ja ein pointer ist kann man pointer arithmetics verwenden und einfach ++ machen um auf den nächsten Index zu springen.
+			p++;									//Da p ja ein pointer ist kann man pointer arithmetics verwenden und einfach ++ machen um auf den nÃ¤chsten Index zu springen.
 		}
 	}
 
@@ -55,7 +56,7 @@ int parseArguement(int argCount, char* args[],board * field1) {
 		return 1;
 	}
 
-	//Checkt ob eingabe zu groß
+	//Checkt ob eingabe zu groÃŸ
 	if (strlen(args[1]) > sizeof(field1->mode)) {
 		printf("\nInvalid mode. Please refer to --help.\n");
 		return 1;
@@ -79,7 +80,7 @@ int createBoard(board* field1) {
 	//Fuellt Felder mit 1-9 indem es am ende inkrementiert wird.
 	int fillBoards = 1;
 
-	//Befüllt die Felder im gameBoard array. 
+	//BefÃ¼llt die Felder im gameBoard array. 
 	for (int i = 0; i <= 2; i++) {
 		for (int j = 0; j <= 2; j++) {
 			field1->gameBoard[i][j] = fillBoards + '0';
@@ -102,7 +103,7 @@ int drawBoard(board* field1,player* p1, player* p2) {
 		for (int j = 0; j < 3; j++) {
 			char c = field1->gameBoard[i][j];
 
-			// Färbt X rot und O blau
+			// FÃ¤rbt X rot und O blau
 			if (c == 'X') {
 				printf("\033[1;31m %c \033[0m", c);  // X rot
 			}
@@ -124,7 +125,7 @@ int drawBoard(board* field1,player* p1, player* p2) {
 }
 
 
-int gameLoopPvp(board* field1,player *p1,player *p2) {
+int gameLoopPvp(board* field1,player *p1,player *p2,Replay *r1) {
 
 	int turn = 0;
 	int draw = 0;
@@ -133,10 +134,10 @@ int gameLoopPvp(board* field1,player *p1,player *p2) {
 	while (p1->winner != 1 && p2->winner != 1 && draw != 1) {
 
 		if (turn % 2 == 0) {
-			humanMove(p1,p1,p2,field1);		//Hier wird p1 zweimal weitergegeben da currentplayer ja p1 oder p2 sein kann. Um die Namen immer richtig einzublenden wird einfach p1,p2 auch weitergegeben
+			humanMove(p1,p1,p2,field1,r1);		//Hier wird p1 zweimal weitergegeben da currentplayer ja p1 oder p2 sein kann. Um die Namen immer richtig einzublenden wird einfach p1,p2 auch weitergegeben
 		}
 		else {
-			humanMove(p2,p1,p2,field1);		//Dasselbe mit p2
+			humanMove(p2,p1,p2,field1,r1);		//Dasselbe mit p2
 		}
 
 		turn++;
@@ -165,7 +166,7 @@ int gameLoopPvp(board* field1,player *p1,player *p2) {
 }
 
 
-int humanMove(player* currentPlayer, player* p1, player *p2 , board* field1) {
+int humanMove(player* currentPlayer, player* p1, player *p2 , board* field1,Replay *r1) {
 
 	int isTaken;
 	char temp[5];
@@ -204,7 +205,7 @@ int humanMove(player* currentPlayer, player* p1, player *p2 , board* field1) {
 		validMove = temp[0];
 		isTaken = 0;
 
-		//Hier wird gecheckt ob eingabe zwischen 1 und 9 ist. Man vergleicht hier zwar char (validMove) mit integers aber da integers im hintergrund mit ASCII verarbeitet werden, ist das so möglich.
+		//Hier wird gecheckt ob eingabe zwischen 1 und 9 ist. Man vergleicht hier zwar char (validMove) mit integers aber da integers im hintergrund mit ASCII verarbeitet werden, ist das so mÃ¶glich.
 		if (validMove < '1' || validMove >'9') {
 			strcpy_s(errorMsg, sizeof(errorMsg), "Invalid move. Please enter 1-9.\n");
 			continue;
@@ -215,7 +216,9 @@ int humanMove(player* currentPlayer, player* p1, player *p2 , board* field1) {
 			for (int j = 0; j < 3; j++) {
 				if (field1->gameBoard[i][j] == validMove) {
 					field1->gameBoard[i][j] = currentPlayer->symbol;
-					isTaken = 1;  
+					isTaken = 1;
+					r1->replayMoves[r1->moveCount] = validMove-'0';
+					r1->moveCount++;
 					break;       
 				}
 			}
@@ -264,7 +267,7 @@ int winnerLogic(board *field1) {
 }
 
 
-int gameLoopPvC(board *field1,player *p1, player *p2) {
+int gameLoopPvC(board *field1,player *p1, player *p2,Replay *r1) {
 
 	int turn = 0;
 	int draw = 0;
@@ -273,10 +276,10 @@ int gameLoopPvC(board *field1,player *p1, player *p2) {
 	while (p1->winner != 1 && p2->winner != 1 && draw != 1) {
 
 		if (turn % 2 == 0) {
-			humanMove(p1, p1, p2, field1);		//Hier wird p1 zweimal weitergegeben da currentplayer ja p1 oder p2 sein kann. Um die Namen immer richtig einzublenden wird einfach p1,p2 auch weitergegeben
+			humanMove(p1, p1, p2, field1,r1);		//Hier wird p1 zweimal weitergegeben da currentplayer ja p1 oder p2 sein kann. Um die Namen immer richtig einzublenden wird einfach p1,p2 auch weitergegeben
 		}
 		else {
-			computerMove(p2,p1, p1, p2, field1);		//Dasselbe mit p2
+			computerMove(p2,p1, p1, p2, field1,r1);		//Dasselbe mit p2
 		}
 
 		turn++;
@@ -307,44 +310,47 @@ int gameLoopPvC(board *field1,player *p1, player *p2) {
 }
 
 
-int computerMove(player* currentPlayer,player *opponent, player* p1, player* p2, board* field1) {
+int computerMove(player* currentPlayer,player *opponent, player* p1, player* p2, board* field1,Replay *r1) {
 
-	
-	char computerMsg[50] = { ' ' };
 
-		drawBoard(field1, p1, p2);
+	drawBoard(field1, p1, p2);
 
-		printf("\n\nEnter your move: ");
+	printf("\n\nEnter your move: ");
 
-		//Speichert den return struct von computerLogic in einen lokalen member aiChoice.
-		struct AiMove aiChoice = computerLogic(field1,currentPlayer,opponent);
+	int move = -1;
 
-		if (aiChoice.row != -1) {
-			field1->gameBoard[aiChoice.row][aiChoice.col] = currentPlayer->symbol;
-			return 0;
-		}
-
-		//Erstellt ein Array mit allen eingabemoeglichkeiten. Dieses Array wird dann geshuffelt. Dadurch ensteht eine random auswahl ohne duplizierung.
+	//AI-Zug
+	struct AiMove aiChoice = computerLogic(field1, currentPlayer, opponent);
+	if (aiChoice.row != -1) {
+		field1->gameBoard[aiChoice.row][aiChoice.col] = currentPlayer->symbol;
+		move = aiChoice.row * 3 + aiChoice.col + 1; //Zug fÃ¼r Replay speichern
+	}
+	else {
+		//Random-Zug
 		int randomNumbers[] = { 1,2,3,4,5,6,7,8,9 };
-
-		//Hier wird array geshuffled
 		shuffle(randomNumbers, 9);
 
 		int isTaken = 0;
-
-		//Hier wird das Array durchgescannt um den Input des Users zu finden und dort wird dann sein Symbol eingesetzt. Falls das Feld nicht frei ist wird der User Input auch nie gefunden -> IsTaken=1. 
-		for (int k = 0; k < 9 &&isTaken!=1; k++) {
+		for (int k = 0; k < 9 && !isTaken; k++) {
 			int validMove = randomNumbers[k];
 			for (int i = 0; i < 3 && !isTaken; i++) {
 				for (int j = 0; j < 3; j++) {
 					if (field1->gameBoard[i][j] == validMove + '0') {
 						field1->gameBoard[i][j] = currentPlayer->symbol;
+						move = validMove;
 						isTaken = 1;
 						break;
 					}
 				}
 			}
 		}
+	}
+
+	//Replay speichern
+	if (move != -1) {
+		r1->replayMoves[r1->moveCount] = move;
+		r1->moveCount++;
+	}
 
 	return 0;
 }
@@ -429,7 +435,7 @@ struct AiMove computerLogic(board* field1,player *current,player *opponent) {
 		move.row = 0; move.col = 0; return move;
 	}
 
-	//Nebendiagonale prüfen 
+	//Nebendiagonale prÃ¼fen 
 	a = field1->gameBoard[0][2];
 	b = field1->gameBoard[1][1];
 	c = field1->gameBoard[2][0];
@@ -517,7 +523,7 @@ struct AiMove computerLogic(board* field1,player *current,player *opponent) {
 		move.row = 0; move.col = 0; return move;
 	}
 
-	//Nebendiagonale prüfen 
+	//Nebendiagonale prÃ¼fen 
 	a = field1->gameBoard[0][2];
 	b = field1->gameBoard[1][1];
 	c = field1->gameBoard[2][0];
@@ -536,7 +542,7 @@ struct AiMove computerLogic(board* field1,player *current,player *opponent) {
 }
 
 
-int gameLoopCvc(board* field1, player* p1, player* p2) {
+int gameLoopCvc(board* field1, player* p1, player* p2,Replay *r1) {
 
 
 	int turn = 0;
@@ -546,12 +552,12 @@ int gameLoopCvc(board* field1, player* p1, player* p2) {
 	while (p1->winner != 1 && p2->winner != 1 && draw != 1) {
 
 		if (turn % 2 == 0) {
-			computerMove(p1,p2, p1, p2, field1);//Hier wird p1 zweimal weitergegeben da currentplayer ja p1 oder p2 sein kann. Um die Namen immer richtig einzublenden wird einfach p1,p2 auch weitergegeben
-			Sleep(1000);
+			computerMove(p1,p2, p1, p2, field1,r1);//Hier wird p1 zweimal weitergegeben da currentplayer ja p1 oder p2 sein kann. Um die Namen immer richtig einzublenden wird einfach p1,p2 auch weitergegeben
+			Sleep(1500);
 		}
 		else {
-			computerMove(p2,p1, p1, p2, field1);		//Dasselbe mit p2
-			Sleep(1000);
+			computerMove(p2,p1, p1, p2, field1,r1);		//Dasselbe mit p2
+			Sleep(1500);
 		}
 
 		turn++;
@@ -580,22 +586,267 @@ int gameLoopCvc(board* field1, player* p1, player* p2) {
 }
 
 
-int createReplay(char saveFile[],Replay *replay1) {
+int createReplay(char saveFile[], Replay* replay1,player *p1, player *p2) {
 
 	FILE* fptr1;
 	errno_t err;
+	const char* folder = "replays";
 
-	err = fopen_s(&fptr1,saveFile,"w");
-
-	if (err != 0 || fptr1 == NULL) {
-		printf("\nKeine Datei gefunden.\n");
+	//Ordner erstellen falls nicht existiert.
+	if (whichOperatingSystem(folder) != 0) {
+		printf("Error: Could not create folder '%s'\n", folder);
 		return 1;
 	}
 
-	for (int i = 0; i < replay1->moveCount; i++) {
-		fprintf(fptr1, "%d", replay1->replayMoves[i]);
+	//Pfad zusammensetzen
+	char fullPath[250];
+	#ifdef _WIN32
+	snprintf(fullPath, sizeof(fullPath), "%s\\%s", folder, saveFile);
+	#else
+	snprintf(fullPath, sizeof(fullPath), "%s/%s", folder, saveFile);
+	#endif
+
+	//checkt ob die Datei schon existiert
+	FILE* checkFile = fopen(fullPath, "r");
+	if (checkFile != NULL) {
+		fclose(checkFile);
+		char overwrite[10];
+		while (1) {
+			printf("File '%s' already exists. Overwrite? (Y/N): ", fullPath);
+			if (fgets(overwrite, sizeof(overwrite), stdin) != NULL) {
+				overwrite[strcspn(overwrite, "\n")] = '\0';
+				if (strcmp(overwrite, "Y") == 0 || strcmp(overwrite, "y") == 0) {
+					break; 
+				}
+				else if (strcmp(overwrite, "N") == 0 || strcmp(overwrite, "n") == 0) {
+					printf("Replay not saved.\n");
+					return 0; 
+				}
+				else {
+					printf("Invalid input. Please enter Y or N.\n");
+				}
+			}
+		}
 	}
 
+	//Datei zum Schreiben freigeben.
+	err = fopen_s(&fptr1, fullPath, "w");
+	if (err != 0 || fptr1 == NULL) {
+		printf("Could not create file: %s\n", fullPath);
+		return 1;
+	}
+
+	//Spieler-Namen speichern
+	strncpy_s(replay1->player1, sizeof(replay1->player1), p1->name, _TRUNCATE);
+	replay1->player1[sizeof(replay1->player1) - 1] = '\0';
+
+	strncpy_s(replay1->player2, sizeof(replay1->player2), p2->name, _TRUNCATE); 
+	replay1->player2[sizeof(replay1->player2) - 1] = '\0';
+
+	fprintf(fptr1, "%s\n", replay1->player1);
+	fprintf(fptr1, "%s\n", replay1->player2);
+
+	//Replay speichern
+	fprintf(fptr1, "%d\n", replay1->moveCount);
+	for (int i = 0; i < replay1->moveCount; i++) {
+		fprintf(fptr1, "%d", replay1->replayMoves[i]);
+		if (i < replay1->moveCount - 1) fprintf(fptr1, " ");
+	}
+	fprintf(fptr1, "\n");
+
 	fclose(fptr1);
+	printf("Replay saved to '%s'\n", fullPath);
 	return 0;
 }
+
+
+int whichOperatingSystem(const char *path) {
+	
+	//Diese Funktion dient zur portability. Da die Folder erstellung nicht ganz portabel ist muss man hier nur zwischen Windows und Linux/Mac Differenzieren. 
+	//Man inportet einfach abhaengig vom Betriebsystem die librarys und called dann die Funktion ein wenig anders.
+
+#ifdef _WIN32
+	if (_mkdir(path) == -1) {
+		if (errno == EEXIST) {
+			//Ordner existiert schon â†’ kein Problem
+			return 0;
+		}
+		else {
+			//Anderer Fehler â†’ zurÃ¼ckgeben
+			perror("Error creating directory");
+			return -1;
+		}
+	}
+#else
+	if (mkdir(path, 0777) == -1) {
+		if (errno == EEXIST) {
+			return 0;
+		}
+		else {
+			perror("Error creating directory");
+			return -1;
+		}
+	}
+#endif
+	//Ordner erfolgreich erstellt
+	return 0;
+}
+
+
+int scanReplay(const char* fullPath, Replay* replay) {
+
+	FILE* fptr = fopen(fullPath, "r");
+	if (!fptr) {
+		printf("Error: Could not open file '%s'\n", fullPath);
+		return 1;
+	}
+
+	//Spieler-Namen einlesen 
+	if (fgets(replay->player1, sizeof(replay->player1), fptr) == NULL) {
+		printf("Error: Could not read player1 name from '%s'\n", fullPath);
+		fclose(fptr);
+		return 1;
+	}
+	replay->player1[strcspn(replay->player1, "\n")] = '\0'; //newline entfernen 
+
+	if (fgets(replay->player2, sizeof(replay->player2), fptr) == NULL) {
+		printf("Error: Could not read player2 name from '%s'\n", fullPath);
+		fclose(fptr);
+		return 1;
+	}
+	replay->player2[strcspn(replay->player2, "\n")] = '\0'; //newline entfernen 
+
+	//moveCount einlesen 
+	if (fscanf_s(fptr, "%d", &replay->moveCount) != 1) {
+		printf("Error: Could not read move count from '%s'\n", fullPath);
+		fclose(fptr);
+		return 1;
+	}
+
+	if (replay->moveCount < 1 || replay->moveCount > 9) {
+		printf("Error: Invalid move count %d in '%s'\n", replay->moveCount, fullPath);
+		fclose(fptr);
+		return 1;
+	}
+
+	//Replay-moves einlesen 
+	for (int i = 0; i < replay->moveCount; i++) {
+		if (fscanf_s(fptr, "%d", &replay->replayMoves[i]) != 1) {
+			printf("Error: Could not read move %d from '%s'\n", i + 1, fullPath);
+			fclose(fptr);
+			return 1;
+		}
+	}
+
+	fclose(fptr);
+	return 0;
+}
+
+
+int loadReplayFromUser(Replay *replay,player *p1, player *p2) {
+
+	char saveFile[100];
+	char fullPath[250];
+	const char* folder = "replays";
+
+	//User nach Dateiname fragen
+	printf("Enter the replay filename (e.g., game1.txt): ");
+	if (fgets(saveFile, sizeof(saveFile), stdin) == NULL) {
+		printf("Invalid input.\n");
+		return 1;
+	}
+	saveFile[strcspn(saveFile, "\n")] = '\0'; //Newline entfernen
+
+	//Vollstaendigen Pfad zusammensetzen und zwischen den Betriebsystemen unterscheiden.
+	#ifdef _WIN32
+	snprintf(fullPath, sizeof(fullPath), "%s\\%s", folder, saveFile);
+	#else
+	snprintf(fullPath, sizeof(fullPath), "%s/%s", folder, saveFile);
+	#endif
+
+
+	//Checken ob die Datei existiert. 
+	FILE* checkFile = fopen(fullPath, "r");
+	if (!checkFile) {
+		printf("File '%s' does not exist.\n", fullPath);
+		return 1;
+	}
+	fclose(checkFile);
+
+	// Replay einlesen
+	if (scanReplay(fullPath, replay) != 0) {
+		printf("Failed to load replay from '%s'\n", fullPath);
+		return 1;
+	}
+
+	strncpy_s(p1->name, sizeof(p1->name), replay->player1, _TRUNCATE);
+	strncpy_s(p2->name, sizeof(p2->name), replay->player2, _TRUNCATE);
+
+	return 0;
+}
+
+
+int makeMove(board* field, player* currentPlayer, int move) {
+	if (move < 1 || move > 9) {
+		printf("Invalid move: %d\n", move);
+		return 1; // Fehler
+	}
+
+	int row = (move - 1) / 3;
+	int col = (move - 1) % 3;
+
+	// PrÃ¼fen, ob das Feld frei ist
+	if (field->gameBoard[row][col] >= '1' && field->gameBoard[row][col] <= '9') {
+		field->gameBoard[row][col] = currentPlayer->symbol;
+		return 0; // Erfolg
+	}
+	else {
+		printf("Field %d is already taken!\n", move);
+		return 1; // Fehler
+	}
+}
+
+
+int gameLoopReplay(player* p1, player* p2, board* field1, Replay* replay) {
+
+	//Replay laden
+	if (loadReplayFromUser(replay,p1,p2) != 0) {
+		printf("No replay loaded. Exiting replay mode.\n");
+		return 1;
+	}
+
+	//Zeige Spieler-Namen
+	printf("Replay: %s (Player1) vs %s (Player2)\n", replay->player1, replay->player2);
+
+	drawBoard(field1, p1, p2);
+
+	//Abspielen der gespeicherten moves
+	for (int i = 0; i < replay->moveCount; i++) {
+		int move = replay->replayMoves[i];
+
+		// Bestimmen, welcher Spieler gerade dran ist
+		player* currentPlayer = (i % 2 == 0) ? p1 : p2;
+
+		makeMove(field1, currentPlayer, move);
+		drawBoard(field1, p1, p2);
+
+		delay(1.5); //1 Sekunde Pause zwischen den moves. Die funktion unterscheidet wieder zwischen den Betriebssystemen.
+	}
+
+	printf("\nReplay finished.\n");
+	return 0;
+}
+
+
+void delay(int seconds) {
+
+//Eine reine portability funktion.
+#ifdef _WIN32
+	Sleep(seconds * 1000);
+#else
+	sleep(seconds);
+#endif
+}
+
+
+
